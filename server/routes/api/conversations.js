@@ -69,6 +69,7 @@ router.get("/", async (req, res, next) => {
 
       // set properties for notification count and latest message preview
       convoJSON.latestMessageText = convoJSON.messages[0].text;
+      convoJSON.messages.reverse(); // reverse the messages so that the latest message comes last(for the UI)
       conversations[i] = convoJSON;
     }
 
