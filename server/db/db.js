@@ -1,4 +1,4 @@
-require('dotenv').config();   // Added this line so that the variables defined in .env could be accessed and allow the database to connect using the DATABASE_URL env variable
+require('dotenv').config();
 const Sequelize = require("sequelize");
 
 const db = new Sequelize(process.env.DATABASE_URL || "postgres://localhost:5432/messenger", {

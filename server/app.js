@@ -1,4 +1,4 @@
-require('dotenv').config() // Added this line to get access to the SESSION_SECRET .env variable
+require('dotenv').config();
 const createError = require("http-errors");
 const express = require("express");
 const { join } = require("path");
