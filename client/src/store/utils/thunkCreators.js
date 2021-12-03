@@ -5,6 +5,7 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  messagesRead,
 } from "../conversations";
 import { gotUser, setFetchingStatus } from "../user";
 
@@ -117,3 +118,15 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
     console.error(error);
   }
 };
+
+// format to send body: {senderId, conversationId}
+// both props of body cannot be null
+export const readMessages = (body) => async (dispatch) => {
+  try {
+    const { data } = await axios.post('/api/messages/read-messages', body);
+    console.log(data);
+    dispatch(messagesRead(data.conversationId, data.senderId));
+  } catch (error) {
+    console.error(error);
+  }
+}

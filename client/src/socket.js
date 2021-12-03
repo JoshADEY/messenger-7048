@@ -5,6 +5,9 @@ import {
   removeOfflineUser,
   addOnlineUser,
 } from "./store/conversations";
+import {
+  readMessages
+} from "./store/utils/thunkCreators";
 
 const socket = io(window.location.origin);
 
@@ -20,6 +23,13 @@ socket.on("connect", () => {
   });
   socket.on("new-message", (data) => {
     store.dispatch(setNewMessage(data.message, data.sender));
+    const { activeConversation, conversations } = store.getState();
+    if (activeConversation) {
+      const conversation = conversations.find(convo => convo.otherUser.username === activeConversation);
+      if (conversation) {
+        store.dispatch(readMessages({ conversationId: conversation.id, senderId: conversation.otherUser.id }));
+      }
+    }
   });
 });
 
