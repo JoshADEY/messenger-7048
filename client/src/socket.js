@@ -22,13 +22,23 @@ socket.on("connect", () => {
     store.dispatch(removeOfflineUser(id));
   });
   socket.on("new-message", (data) => {
-    store.dispatch(setNewMessage(data.message, data.sender));
     const { activeConversation, conversations } = store.getState();
     if (activeConversation) {
       const conversation = conversations.find(convo => convo.otherUser.username === activeConversation);
       if (conversation) {
-        store.dispatch(readMessages({ conversationId: conversation.id, senderId: conversation.otherUser.id }));
+        if (conversation.otherUser.id === data.message.senderId) {
+          data.message.read = true;
+          store.dispatch(setNewMessage(data.message, data.sender));
+          store.dispatch(readMessages({ conversationId: conversation.id, senderId: conversation.otherUser.id }));
+
+        } else {
+          store.dispatch(setNewMessage(data.message, data.sender));
+        }
+      } else {
+        store.dispatch(setNewMessage(data.message, data.sender));
       }
+    } else {
+      store.dispatch(setNewMessage(data.message, data.sender));
     }
   });
 });
