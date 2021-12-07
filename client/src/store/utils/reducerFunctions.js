@@ -100,3 +100,22 @@ export const updateReadStatus = (state, conversationId, senderId, newStatus) => 
     }
   });
 }
+
+export const initializeUnreadMessages = (state, payload) => {
+  const conversations = {};
+  payload.conversations.forEach(convo => {
+      conversations[convo.id] = convo.messages.filter(mes => mes.senderId !== payload.userId && !mes.read).length;
+  });
+  return conversations;
+}
+
+
+
+export const initializeLastReadMessages = (state, payload) => {
+  const conversations = {};
+  payload.conversations.forEach(convo => {
+      const recipientReadMessages = convo.messages.filter(mes => mes.senderId === payload.userId && mes.read);
+      conversations[convo.id] = recipientReadMessages.length > 0 ? recipientReadMessages[recipientReadMessages.length - 1].id : null;
+  });
+  return conversations;
+}

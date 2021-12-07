@@ -7,6 +7,8 @@ import {
   setSearchedUsers,
   messagesRead,
 } from "../conversations";
+import { gotUnreadMessages } from "../unreadMessages";
+import { gotLastReadMessages } from "../lastReadMessages";
 import { gotUser, setFetchingStatus } from "../user";
 
 axios.interceptors.request.use(async function (config) {
@@ -70,10 +72,13 @@ export const logout = (id) => async (dispatch) => {
 
 // CONVERSATIONS THUNK CREATORS
 
-export const fetchConversations = () => async (dispatch) => {
+export const fetchConversations = () => async (dispatch, getState) => {
   try {
     const { data } = await axios.get("/api/conversations");
     dispatch(gotConversations(data));
+    const userId = getState().user.id;
+    dispatch(gotUnreadMessages(data, userId));
+    dispatch(gotLastReadMessages(data, userId));
   } catch (error) {
     console.error(error);
   }
@@ -91,6 +96,12 @@ const sendMessage = (data, body) => {
     sender: data.sender,
   });
 };
+
+const sendLastMessageRead = (data) => {
+  socket.emit("message-read", {
+    lastReadMessage: data.lastReadMessage,
+  })
+}
 
 // message format to send: {recipientId, text, conversationId}
 // conversationId will be set to null if its a brand new conversation
@@ -119,13 +130,44 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
   }
 };
 
+
+const postReadMessageActions = (body, getState) => {
+  const conversation = getState().conversations.find(convo => convo.id === body.conversationId);
+    if (conversation){
+      const readMessages = conversation.messages.filter(mes => mes.senderId === body.senderId && mes.read);
+      const lastReadMessage = readMessages.length > 0 ? readMessages[readMessages.length - 1] : null;
+      if (lastReadMessage) {
+        sendLastMessageRead({ lastReadMessage })
+      }
+    }
+}
+
 // format to send body: {senderId, conversationId}
 // both props of body cannot be null
-export const readMessages = (body) => async (dispatch) => {
+export const readMessages = (body) => async (dispatch, getState) => {
   try {
-    const { data } = await axios.post('/api/messages/read-messages', body);
-    console.log(data);
-    dispatch(messagesRead(data.conversationId, data.senderId));
+    await axios.patch('/api/messages/read-messages', body);
+    
+    dispatch(messagesRead(body.conversationId, body.senderId));
+  
+    postReadMessageActions(body, getState);
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// format to send body: {message, sender, senderId, conversationId}
+// all props of body except sender cannot be null
+export const addMessageThenRead = (body) => async (dispatch, getState) => {
+  try {
+    dispatch(setNewMessage(body.message, body.sender));
+    
+    await axios.patch('/api/messages/read-messages', body);
+    
+    dispatch(messagesRead(body.conversationId, body.senderId));
+    
+    postReadMessageActions(body, getState)
   } catch (error) {
     console.error(error);
   }

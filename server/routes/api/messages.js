@@ -44,7 +44,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.post("/read-messages", async (req, res, next) => {
+router.patch("/read-messages", async (req, res, next) => {
   try {
     if (!req.user) {
       return res.sendStatus(401);
@@ -52,7 +52,22 @@ router.post("/read-messages", async (req, res, next) => {
     const userId = req.user.id;
     const { conversationId, senderId } = req.body;
 
-    let conversation = await Conversation.findConversation(
+    const convo = await Conversation.findOne({
+      where: {
+        id: { [Op.eq] : conversationId },
+        [Op.or]: {
+          user1Id: userId,
+          user2Id: userId,
+        }
+      }
+    });
+
+    if (!convo) {
+      return res.sendStatus(404);
+    }
+
+
+    const conversation = await Conversation.findConversation(
       senderId,
       userId
     );
@@ -61,27 +76,20 @@ router.post("/read-messages", async (req, res, next) => {
       return res.sendStatus(404);
     }
 
-    if (conversation.id !== conversationId) {
-      return res.sendStatus(401);
-    }
 
     const result = await Message.update({ read: true }, {
       where: {
         [Op.and]: [
-          { conversationId: conversationId },
+          { conversationId: conversation.id },
           { senderId: senderId },
           { read: false }
         ]
       },
       returning: true,
-      plain: true
     });
 
-    // Note: the PostgreSQL database seems to only return the first message that was updated when result[1] or result[1].dataValues is called
-    // but it is actually supposed to return all the updated messages, so I will send back the senderId to use as a way to update the read status of the messages on the client
-    const updatedMessages = result[1];
 
-    return res.json({ updatedMessages, conversationId, senderId });
+    return res.sendStatus(204);
 
 
   } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Badge, Box } from "@material-ui/core";
 import { BadgeAvatar, ChatContent } from "../Sidebar";
 import { makeStyles } from "@material-ui/core/styles";
@@ -22,9 +22,6 @@ const useStyles = makeStyles((theme) => ({
   left: {
     display: "flex",
     alignItems: "center",
-  },
-  right: {
-
   }
 
 }));
@@ -33,9 +30,7 @@ const Chat = (props) => {
   const classes = useStyles();
   const { conversation } = props;
   const { otherUser } = conversation;
-  const numberOfUnreadMessages = useMemo(() => {
-    return conversation.messages.filter(message => message.senderId === conversation.otherUser.id && !message.read).length;
-  }, [conversation]);
+  const numberOfUnreadMessages = props.unreadMessages[conversation.id] !== undefined ? props.unreadMessages[conversation.id] : 0;
 
   const handleClick = async (conversation) => {
     await props.setActiveChat(conversation.otherUser.username);
@@ -55,11 +50,17 @@ const Chat = (props) => {
         />
         <ChatContent conversation={conversation} />
       </Box>
-      <Box className={classes.right}>
+      <Box>
         <Badge badgeContent={numberOfUnreadMessages} color="primary" />
       </Box>
     </Box>
   );
+};
+
+const mapStateToProps = (state) => {
+  return {
+    unreadMessages: state.unreadMessages
+  };
 };
 
 const mapDispatchToProps = (dispatch) => {
@@ -73,4 +74,4 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-export default connect(null, mapDispatchToProps)(Chat);
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);
