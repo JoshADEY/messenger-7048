@@ -67,20 +67,12 @@ router.patch("/read-messages", async (req, res, next) => {
     }
 
 
-    const conversation = await Conversation.findConversation(
-      senderId,
-      userId
-    );
-
-    if (!conversation) {
-      return res.sendStatus(404);
-    }
 
 
     const result = await Message.update({ read: true }, {
       where: {
         [Op.and]: [
-          { conversationId: conversation.id },
+          { conversationId: conversationId },
           { senderId: senderId },
           { read: false }
         ]
