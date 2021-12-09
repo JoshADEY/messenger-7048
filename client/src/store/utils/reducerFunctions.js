@@ -80,3 +80,42 @@ export const addNewConvoToStore = (state, recipientId, message) => {
     }
   });
 };
+
+export const updateReadStatus = (state, conversationId, senderId, newStatus) => {
+  return state.map(convo => {
+    if (convo.id === conversationId) {
+      const newConvo = {...convo};
+      newConvo.messages = newConvo.messages.map(message => {
+        if (message.senderId === senderId) {
+          const newMessage = {...message};
+          newMessage.read = newStatus;
+          return newMessage;
+        } else {
+          return message;
+        } 
+      });
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+}
+
+export const initializeUnreadMessages = (state, payload) => {
+  const conversations = {};
+  payload.conversations.forEach(convo => {
+      conversations[convo.id] = convo.messages.filter(mes => mes.senderId !== payload.userId && !mes.read).length;
+  });
+  return conversations;
+}
+
+
+
+export const initializeLastReadMessages = (state, payload) => {
+  const conversations = {};
+  payload.conversations.forEach(convo => {
+      const recipientReadMessages = convo.messages.filter(mes => mes.senderId === payload.userId && mes.read);
+      conversations[convo.id] = recipientReadMessages.length > 0 ? recipientReadMessages[recipientReadMessages.length - 1].id : null;
+  });
+  return conversations;
+}
